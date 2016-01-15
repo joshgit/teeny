@@ -1,0 +1,79 @@
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head>
+    <title>teeny.link</title>
+</head>
+<body>
+
+<h1 style="font-size: 10px">Teeny.link</h1>
+
+<div id="link_div">
+Link: <input id="url_field" type="text" /> <button id="shrink_button">shrink it</button> <span id="output_span"></span>
+</div>
+
+<div id="loading_div" style="display: none;">
+Redirecting to link...
+</div>
+
+<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script>
+
+var base_url = 'https://eb3km3hgq3.execute-api.us-west-2.amazonaws.com/prod';
+
+function shrink_url() {
+    var url = $('#url_field').val();
+    if (!url) {
+        return;
+    }
+
+    $.ajax(base_url + "?e=" + encodeURIComponent(url))
+        .success(function (data, textStatus, jqXHR) {
+            if (data.e) {
+                var teeny_url = 'http://teeny.link/?d=' + data.e;
+                $('#output_span').append(
+                    $('<a></a>').attr('href', teeny_url).html(teeny_url));
+            } else {
+                console.log("No data returned.");
+            }
+        })
+        .error(function (jqXHR, textStatus, errorThrown) {
+            alert('Error: ' + jqXHR + ', ' + textStatus + ', ' + errorThrown);
+        });
+}
+
+$('#shrink_button').click(shrink_url);
+$("#url_field").keyup(function (e) {
+    if (e.keyCode == 13) {
+        shrink_url();
+    }
+});
+
+$(function() {
+    var h = window.location.href;
+    var q_index = h.indexOf('?');
+    if (q_index > -1) {
+        var pairs = h.substring(q_index + 1).split('&');
+        for (var i = 0; i < pairs.length; i++) {
+            var pair = pairs[i].split('=');
+            if (pair && pair.length > 1 && pair[0] === 'd') {
+                $('#link_div').hide();
+                $('#loading_div').show();
+                $.ajax(base_url + "?d=" + pair[1])
+                    .success(function (data, textStatus, jqXHR) {
+                        if (data && data.d) {
+                            var loc = (data.d.indexOf('http') !== 0 ? 'http://' : '') + data.d;
+                            window.location = loc;
+                        } else {
+                            console.log("No data returned.");
+                        }
+                    })
+                    .error(function (jqXHR, textStatus, errorThrown) {
+                        alert('Error: ' + jqXHR + ', ' + textStatus + ', ' + errorThrown);
+                    });
+            }
+        }
+
+    }
+});
+</script>
+</body>
+</html>
